@@ -632,7 +632,7 @@ TypeConstraints?
     
     log.info("Initial count: " initialCount "");
     
-    variable Integer n = initialCount;
+    variable Integer n := initialCount;
     
     shared void increment() {
         n++;
