@@ -104,15 +104,8 @@
 
         <para>The following examples are legal identifiers:</para>
         
-        <programlisting>Person</programlisting>
-        <programlisting>name</programlisting>
-        <programlisting>personName</programlisting>
-        <programlisting>_id</programlisting>
-        <programlisting>x2</programlisting>
-        <programlisting>\I_id</programlisting>
-        <programlisting>\Iobject</programlisting>
-        <programlisting>\iObject</programlisting>
-        <programlisting>\iclass</programlisting>
+        <para><literal>Person name personName _id x2 \I_id \Iobject \iObject \iclass
+        </literal></para>
 
         <para>The prefix <literal>\I</literal> or <literal>\i</literal> is not 
         considered part of the identifier name. Therefore, <literal>\iperson</literal>
