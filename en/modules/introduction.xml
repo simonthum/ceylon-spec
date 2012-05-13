@@ -323,12 +323,22 @@
     locals must be explicitly declared using the <literal>variable</literal> 
     annotation.
     </para>
-    
+
+    <para>
+    Attributes (OPTIONAL Members) have an associated <emphasis>volatility</emphasis>
+    which eases reasoning about program behaviour (often referred to
+    as referential transparency). It can be specified explicitly if
+    desired and, when compared to java, allows for more solid reasoning
+    and predictable runtime behaviour.
+    <!-- TODO See section compiletimesafety -->
+    </para>
+
     <para>
     There are no <literal>static</literal> members. Instead, 
     <emphasis>toplevel</emphasis> methods and attributes are declared as direct 
     members of a package. This, along with certain other features, gives the 
-    language a more regular block structure.
+    language a more regular block structure. Also, attributes can be constant,
+    allowing their evaluation during compile time.
     </para>
     
     <para>
@@ -456,6 +466,116 @@ shared abstract class AbstractMetaThingy() { ... }</programlisting>
     
     </section>
     -->
+    
+    <section id="compiletimesafety">
+    <title>Compile-time safety for optional values, volatile values and type narrowing</title>
+    
+    <para>
+    There is no primitive null in Ceylon. The null value is an instance of 
+    the class <literal>Nothing</literal> that is not assignable to user-defined 
+    class or interface types. An <emphasis>optional type</emphasis> is a 
+    union type like <literal>Nothing|String</literal>, which may be abbreviated
+    to <literal>String?</literal>. An optional type is not assignable to a 
+    non-optional type except via use of the special-purpose 
+    <literal>if (exists ... )</literal> construct. Thus, the Ceylon compiler 
+    is able to detect illegal use of a null value at compile time. Therefore, 
+    there is no equivalent to Java's <literal>NullPointerException</literal> 
+    in Ceylon.
+    </para>
+    
+    <para>
+    Similarly, there are no C-style typecasts in Ceylon. Instead, the 
+    <literal>if (is ... )</literal> and <literal>case (is ... )</literal> 
+    constructs may be used to narrow the type of an object reference without 
+    risk of a <literal>ClassCastException</literal>. The combination of
+    <literal>case (is ... )</literal> with algebraic types amounts to a kind
+    of language-level support for the visitor pattern.
+    </para>
+
+    <para>PROPOSAL: Ceylon knows about the volatility of every
+    member and expression.  Unlike in java, where the programmer has
+    to assume side-effects even in simple getters, ceylon enforces constraints
+    which enable the compiler and human reader to make solid
+    judgements about program behaviour. Volatility
+    is <emphasis>not</emphasis> part of the type system, but member
+    volatility allows more advanced runtime state safety concepts
+    to be checked by dedicated tools.</para>
+    <programlisting>interface A {
+  shared Integer? i; // non-variable, thus implicitly immutable
+  shared variable Integer j; // variable, assumed volatile
+}
+
+class B satisfies A () {
+  ...
+  shared Integer? i {
+    // no side effects allowed here!
+    return j; // error: more volatile expression
+    return /*immutable or constant expression*/
+  }
+  shared variable Integer? j {
+    return i; // fine, as anything else you could do here
+  }
+
+  void m() {
+    if (exists i) {
+      // fine, n is known immutable
+    }
+    if (exists j) {
+      // OK, but re-evaluation of j will fire up errors
+    }
+    if (exists ej = j) {
+      // all j will be reducted to ej,
+      // or be errors
+    }
+    concurrent if (exists j) {
+      // OK, and re-evaluation will actually take place
+      // at the discretion of the programmer
+    }
+  }
+}
+
+    </programlisting>
+    
+
+    <para>Ceylon seeks to cover the
+    relates issues of immutability, referential transparency,
+    concurrency safety and compile-time evaluation using the
+    volatility concept. Volatility is classified from compile-time
+    constant to unpredictably volatile, allowing to judge the safety
+    of assumptions and therefore optimizations in an increasingly
+    multi-core environment.  In the above <literal>if (exists
+    ... )</literal> example, ceylon is able to guarantee that the
+    <literal>...</literal> expression can not change within the
+    following block, so the assumption <literal>...</literal> exists
+    holds indeed.  OPTIONAL: Ceylon can prove or dismiss the continued
+    validity of any kind of assumption established in a control
+    structure, and guide the programmer to protect against possibly
+    invalidated assumptions. This leads to more incentive to use
+    immutable state, and increased visibility of mutable or volatile
+    state handling.
+    </para>
+    
+    <para>
+    Attributes have an associated <emphasis>volatility</emphasis>
+    which is <literal>const</literal>, <literal>immutable</literal>,
+    <literal>local</literal> or <literal>varying</literal> in strict
+    order from no volatility (or deterministic) to high volatility (or
+    indeterministic). We say an attribute
+    <emphasis>exhibits</emphasis> e.g. local volatility if its getter
+    does not evaluate expressions more volatile than local. In this
+    case, the attribute may be said to <emphasis>fulfil</emphasis>
+    varying volatility, but not immutable or constant volatility.
+    Non-<literal>variable</literal> attributes are immutable by
+    default, <literal>variable</literal> attributes are considered
+    volatile.
+
+    Locals (TODO local to the thread - clarify) are considered to have
+    the most indeterminate volatility of all expressions assigned to
+    the local.  This enables the use of locals even in constant
+    attribute getters.
+    </para>
+
+    </section>
     
     <section id="sequences">
     <title>Sequences and comprehensions</title>

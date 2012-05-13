@@ -675,7 +675,7 @@ TypeConstraints?
         method and attribute definitions.</para>
         
         <para>An initializer parameter may be used to specify or initialize the value 
-        of an attribute:</para>
+        of a non-constant attribute:</para>
         
         <programlisting>shared class Counter(Integer initialCount=0) {
     shared variable Integer count := initialCount;
@@ -697,6 +697,17 @@ TypeConstraints?
     shared void unlock() { lock.disengage(this); }
 }</programlisting>
 
+        <para>An initializer parameter may <emphasis>not</emphasis> be
+        used to specify or initialize the value of a constant
+        attribute. Constant attributes can only be specified using
+        constant expressions, and are <emphasis>not</emphasis>
+        considered part of the initializer section. Constant
+        attributes are always considered initialized for the pupose of
+        the initializer section.</para>
+
+        <comment><para>TODO: should class initializer parameters be allowed to be declared 
+        <literal>shared</literal>, allowing a shortcut simple attribute declaration like in 
+        Scala?</para></comment>
     </section>
 
     <section id="callabletypeofclass">
@@ -762,9 +773,9 @@ TypeConstraints?
         </itemizedlist>
         
         <para>A statement or declaration contained in the initializer of a class may 
-        not evaluate an attribute, invoke a method, or instantiate a member class upon 
+        not evaluate a non-constant attribute, invoke a method, or instantiate a member class upon 
         the instance being initialized, including upon a self reference to the instance 
-        being initialized if the attribute, method, or member class:</para>
+        being initialized if the non-constant attribute, method, or member class:</para>
         
         <itemizedlist>
            <listitem>
@@ -1296,11 +1307,6 @@ TypeConstraints?
          <para>An <literal>object</literal> class:</para>
          
          <itemizedlist>
-             <!-- 
-             <listitem>
-                 <para>is implicitly <literal>final</literal>,</para>
-             </listitem>
-             -->
              <listitem>
                  <para>may not be extended by another class,</para>
              </listitem>
@@ -1326,6 +1332,9 @@ TypeConstraints?
          <para>An <literal>object</literal> attribute:</para>
          
          <itemizedlist>
+	     <listitem>
+                 <para>is always considered to exhibit <literal>constant</literal> volatility,</para>
+             </listitem>
              <listitem>
                  <para>is non-<literal>variable</literal>, and</para>
              </listitem>
@@ -2162,20 +2171,29 @@ else {
         <para>Unlike Java fields, Ceylon attribute access is polymorphic and attribute 
         definitions may be refined by subclasses.</para>
         
-        <para>All attributes have a type and name. The type of the attribute is specified
+        <para>All attributes have a type, name and volatility. The type of the attribute is specified
         by the simple attribute declaration or attribute getter declaration. An attribute 
         may be <literal>variable</literal>, in which case its value can be assigned using 
         the <literal>:=</literal> and compound assignment operators. This is the case for
-        simple attributes explicitly annotated <literal>variable</literal>, or for 
-        attributes with a setter declaration.</para>
+        simple attributes explicitly annotated <literal>variable</literal>(, or for 
+        attributes with a setter declaration. TODO might be removed) Volatility can be specified using explicit
+	annotations or by relying on the default volatility which is <literal>varying</literal>
+	for <literal>variable</literal> attributes and <literal>immutable</literal> for
+	non-variable attributes.
+	</para>
             
         <programlisting>AttributeHeader: (UnionType | "value") MemberName</programlisting>
         
         <para>Note that an attribute declaration is essentially a method declaration with 
-        zero parameter lists. Likewise, an attribute evaluation is essentially a method 
+        zero parameter lists and known volatility. Likewise, an attribute evaluation is essentially a method 
         invocation with zero argument lists.</para>
         
         <para>A toplevel attribute may not be <literal>variable</literal>.</para>
+
+	<para>A constant attribute body may only evaluate constant expressions. This excludes
+	it from referring to <literal>this</literal>, <literal>outer</literal> or 
+        <literal>super</literal>, since these are considered immutable, which does not fulfil constant.
+	However, a constant attribute is always considered initialized.</para>
         
         <para>If a class declares or inherits a <literal>variable</literal> attribute, it 
         must (directly or indirectly) extend the class <literal>IdentifiableObject</literal> 
@@ -2230,7 +2248,7 @@ else {
         an initializer or specifier.</para>
 
         <para>Explicitly typed parameters of classes and methods are also considered to be 
-        locals.</para>
+        locals, their volatility is local as well.</para>
                  
         <programlisting>variable Integer count := 0;</programlisting>
         
@@ -2248,7 +2266,10 @@ else {
         <para>A <emphasis>local</emphasis> represents state associated with execution of a
         particular block of code. A local is really just a special case of a simple attribute 
         declaration, but one whose state is not held across multiple executions of the block
-        of code in which the local is defined.</para> 
+        of code in which the local is defined. The volatility of a local is assumed to be the
+	most volatile of all expressions assigned to it.
+	TODO clarify thread locality here - does this hold for
+	multiple concurrent executions?.</para> 
         
         <itemizedlist>
             <listitem>
@@ -2356,7 +2377,7 @@ print(greeting);</programlisting>
             <programlisting>AttributeGetter: AttributeHeader Block</programlisting>
             
             <para>An attribute getter defines how the value of a derived attribute is
-            obtained.</para>
+            obtained. It is required to adhere to the attribute's volatility constraints.</para>
                                 
             <programlisting>shared Float total {
     variable Float sum := 0.0;
@@ -2369,6 +2390,12 @@ print(greeting);</programlisting>
             <para>If an attribute getter has a matching attribute setter, we say that 
             the attribute is <literal>variable</literal>. Otherwise we say it is 
             non-<literal>variable</literal>.</para>
+
+	    <para>The volatility of the attribute may stem from defaults, be inherited
+	    or be declared by annotating it. The getter must adhere to the constraints
+	    given for its volatility, such as being free of side effects or not
+	    evaluating more volatile expressions. TODO put table here or give the thing
+	    an own section somewhere?</para>
                         
             <para>A block local attribute getter may be declared using the keyword 
             <literal>value</literal> in place of the explicit type declaration. Then 
@@ -2419,7 +2446,8 @@ shared assign name { firstName := first(name); lastName := last(name); }</progra
             annotating the matching getter.</para>
             
             <comment><para>TODO: should we require that the corresponding getter be 
-            annotated <literal>variable</literal>?</para></comment>
+            annotated <literal>variable</literal>?</para>PROPOSAL: yes, since only
+	    then volatility can be easily determined on the getter.</comment>
             
             <!--
             <comment><para>TODO: should we allow overloaded attribute setters, for example:</para>
@@ -2501,6 +2529,12 @@ shared assign name { firstName := first(name); lastName := last(name); }</progra
                 inherits a non-<literal>formal</literal> <!--non-<literal>definite</literal>-->
                 attribute that refines the attribute.</para>
             </listitem>
+	    <listitem>
+	        <para>An attribute with constant volatility cannot be refined. <!-- formal constants
+		might be used to force sub-typed to refine constants, as some sort of an interface
+		for meta-programming -->
+		</para>
+	    </listitem>
             </itemizedlist>           
             
             <para>A non-<literal>variable</literal> attribute may be refined by a simple 
@@ -2509,7 +2543,8 @@ shared assign name { firstName := first(name); lastName := last(name); }</progra
             getter and setter pair.</para>
             
             <comment><para>TODO: are you allowed to refine a getter or setter without also 
-            refining its matching setter or getter?</para></comment>
+            refining its matching setter or getter? PROPOSAL: No. it is easy to relax,
+	    but hard to enforce later.</para></comment>
             
             <para>An attribute of a subtype <emphasis>refines</emphasis> an attribute of
             a supertype if the first attribute:</para>
@@ -2536,8 +2571,8 @@ shared assign name { firstName := first(name); lastName := last(name); }</progra
                     and</para>
                 </listitem>
                 <listitem>
-                    <para>is <literal>variable</literal>, if the attribute it refines is 
-                    <literal>variable</literal>.</para>
+                    <para>fulfils the volatility of the attribute it refines, i.e.
+		    is equally or less volatile than the refined attribute.</para>
                 </listitem>
             </itemizedlist>
             
@@ -2553,13 +2588,11 @@ shared assign name { firstName := first(name); lastName := last(name); }</progra
             attributes not themselves annotated <literal>actual</literal>.</para>
         
             <para>A non-<literal>variable</literal> attribute may be refined by a 
-            <literal>variable</literal> attribute.</para>
+            <literal>variable</literal> attribute, though since the getter is constrained
+	    by volatility checks it cannot break any guarantees implied by the refined
+	    attribute.</para>
             
-            <comment><para>TODO: Is that really allowed? It could break the superclass.
-            Should we say that you are allowed to do it when you refine an interface
-            attribute, but not when you refine a superclass attribute?</para></comment>
-            
-            <para>Then evaluation and assignment of the attribute is polymorphic, and 
+            <para>The evaluation and assignment of the attribute is polymorphic, and 
             the actual attribute evaluated or assigned depends upon the concrete type 
             of the class instance.</para>
             
@@ -2754,6 +2787,62 @@ shared assign name { firstName := first(name); lastName := last(name); }</progra
         <literal>actual</literal> then it must also be annotated 
         <literal>shared</literal>.</para>
         
+    </section>
+
+    <section id="volatility">
+        <title>Volatility modifiers</title>
+        
+        <para>A declaration of an attribute (OPTIONAL and potentially
+        other program elements) may be annotated
+        <literal>varying</literal>, <literal>local</literal>,
+        <literal>immutable</literal> or <literal>constant</literal> to
+        explicitly specify its volatility. Volatility affects the
+        signature of attributes, thus also the contracts of
+        interfaces. Every ceylon expression can be determined to
+        belong to a volatility class. The volatility class is defined
+        by the range of circumstances under which an evaluation result
+        may change.</para>
+        
+        The attribute (OPTIONAL program element, i.e. methods also)
+        must adhere to certain constraints implied by the definition
+        of the volatility class. This is to establish a useful degree
+        of referential transparency in ceylon.
+	<itemizedlist>
+            <listitem>
+                <para><literal>constant</literal> volatility is
+                exhibited by literals and explicitly annotated
+                attributes. This volatility is understood as
+                compile-time constant, i.e. changing it requires
+                recompiling and can be considerded an ABI break. Pi
+                might be a good constant. Evaluation may not cause
+                side-effects.</para>
+	    </listitem>
+	    <listitem>
+                <para><literal>immutable</literal> volatility is given
+                for state that is bound to an object instance and does
+                not change during its life-time. Code executed during
+                evaluation may not assume any side-effects to become
+                visible except through the instance returned.</para>
+	    </listitem>
+	    <listitem>
+                <para><literal>local</literal> volatility is given for
+                state that cannot change except if the
+                currently-executing thread performs an operation which
+                does not fulfil local volatility on the object
+                representing the state. Code executed during
+                evaluation may not assume any side-effects to become
+                visible except through the instance returned.</para>
+	    </listitem>
+	    <listitem>
+                <para><literal>varying</literal> volatility is
+                exhibited by state that depends on any part of the
+                runtime state, including other threads. Any state or
+                evaluation thereof fulfils varying volatility.</para>
+	    </listitem>
+	</itemizedlist>
+	<!-- Note that unlike constant, all other classes allow for side effects
+	but just constrain their potential visibility. In principle,
+	they could be checked with explicit overrides allowed. --> 
     </section>
     
     <section id="visibility">

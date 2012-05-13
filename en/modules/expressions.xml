@@ -38,21 +38,32 @@
     to a program element if the type of the expression is assignable to the 
     declared type of the program element.</para>
     
-    <comment><para>TODO: We need a definition of a "constant expression".
+    <para>At the same time, ceylon expressions are checked for their
+    volatility as defined in (TODO maybe here?). In some context such
+    as attributes, the volatility of expressions is constrained to
+    enable safe evaluation at compile time or optimizeability of
+    re-evaluations (i.e. establish referential transparency). Every
+    evaluatable program element has an assumed volatility either by
+    annotation or compiler rules, and expressions have the least
+    deterministic volatility of any sub-expression.  For each type of
+    expression, more detailed rules are specified if applicable.
+    </para>
+
+    <para><itemizedlist>
+    <listitem><literal>constant</literal> expressions (known at compile time, can be inlined)</listitem>
+    <listitem><literal>immutable</literal> expressions (idempotent, side-effect free, great optimizability) </listitem>
+    <listitem><literal>local</literal> expressions, such as parameter values, good optimizeability</listitem>
+    <listitem><literal>varying</literal> expressions may contain state from about anywhere, and cannot be optimized much.</listitem>
+    </itemizedlist></para>
+
+    <comment><para>TODO: Clarify constant expressions in the following contexts.
     We might use it for:</para>
     <itemizedlist>
     <listitem><literal>case</literal> expressions (when are these evaluated?),</listitem>
     <listitem>annotations available at compile time,</listitem>
     <listitem>default parameter values (when are these evaluated?), and even</listitem>
-    <listitem>initializer/specifier expressions in declaration section of class body.</listitem>
-    </itemizedlist>
-    <para>For example we could follow Java's very restrictive model, and say 
-    that a constant expression must be anything formed from literals, metamodel 
-    references, the <literal>..</literal> and <literal>-></literal> operators.
-    Or we could be much less restrictive and just say that it is any expression 
-    that could be used to initialize a toplevel attribute of the package.</para>
-    <para>At the very least, we need to properly define the scope in which the 
-    above things are actually evaluated.</para></comment>
+    <listitem>initializer/specifier expressions in declaration section of class body. DONE, always considered initilized</listitem>
+    </itemizedlist></comment>
     
     <comment><para>TODO: For user interfaces, some kind of support for pass by
     reference would be especially helpful.</para></comment>
@@ -143,7 +154,8 @@ assert() that (semaphore&identical;s); //assertion never fails</programlisting>
         Ceylon attributes and locals are considered <emphasis>variables</emphasis> in the 
         sense of the JLS. Evaluation is considered a <emphasis>use</emphasis> operation, 
         and assignment is considered an <emphasis>assign</emphasis> operation, again in 
-        terms of the JLS.</para>
+        terms of the JLS. TODO check this for volatility implications. However since javascript exists
+	it's better to split out backend stuff like this and sunny-day operation characteristics.</para>
         
     </section>
     
@@ -229,7 +241,10 @@ setGreeting(greeting);</programlisting>
     
     <para>All literal values are instances of immutable types. The value of a literal 
     expression is an instance of the type. How this instance is produced is not specified 
-    here.</para>
+    here. PROPOSAL: The expression in which the literal is evaluated is considered to
+    exhibit <emphasis>constant volatility</emphasis>. While an instance cannot be constant
+    its value can be, thus the volatility can be assumed constant iff the runtime
+    handles this in a suitable manner.</para>
     
     <!--section id="datetime">
         <title><literal>Date</literal> and <literal>Time</literal> literals</title>
@@ -470,7 +485,7 @@ shared interface Color { ... }</programlisting>
             <listitem>
                 <para>any non-<literal>variable</literal> local, block local attribute 
                 getter or block local method declared earlier within the containing 
-                scope.</para>
+                scope.TODO could this be any initialized thing with local volatility?</para>
             </listitem>
         </itemizedlist>
         
@@ -479,6 +494,7 @@ shared interface Color { ... }</programlisting>
         <literal>Gettable&lt;String&gt;</literal> is evaluated to produce a constant 
         character string.</para>
         -->
+	<para>The volatility of a string template has no special rules.</para>
         
         <comment><para>TODO: Should string templates be evaluated lazily?</para></comment>
         
@@ -507,6 +523,8 @@ shared interface Color { ... }</programlisting>
         There is no <literal>super</literal> reference in an interface member body. 
         <!--<emphasis>(Note that <literal>definite</literal> is a proposed 
         feature for a future version of the language.)</emphasis>--></para>
+
+	<para>Self references are considered to exhibit immutable volatility</para>
         
         <comment><para>TODO: <literal>super</literal> doesn't let you call a refined
         member belonging to an interface. A solution would be to let you rename 
@@ -563,6 +581,8 @@ shared interface Color { ... }</programlisting>
         <para>Parentheses are used for grouping:</para>
     
         <programlisting>ParExpression: "(" Expression ")"</programlisting>
+
+	<para>The volatility of a compound expression has no special rules.</para>
     
     <section id="receiverexpressions">
         <title>Receiver expressions</title>
@@ -594,12 +614,13 @@ shared interface Color { ... }</programlisting>
         held as part of the callable reference. When a value reference with a 
         receiver expression is executed, the receiver expression is evaluated and a 
         reference to the resulting value is held as part of the value reference.</para>
-        
+
         <!--
         <para>An outer instance reference may also specify a receiver expression. The
         receiver expression must be explicitly specified unless the current instance
         of the current class is the receiver.</para>
         -->
+	<para>The volatility of a receiver expression has no special rules.</para>
         
     </section>
         
@@ -697,6 +718,10 @@ assert() that (tree &equals; node.outer.outer);</programlisting>
         <para>The type of an attribute reference or local reference expression for an 
         attribute, local, or parameter of declared type <literal>X</literal> is simply
         <literal>X</literal>.</para>
+
+	<para>The volatility of a value expression has no special rules, except that the
+	volatility of the invoked member has to be taken into account only on evaluation,
+	i.e. the value reference itself may be less volatile.</para>
         
         <!--
         <itemizedlist>
@@ -774,6 +799,10 @@ assert() that (tree &equals; node.outer.outer);</programlisting>
         the return type and parameter lists of the method, callable parameter, or 
         class it refers to, allowing compile-time validation of argument types when 
         the callable reference is invoked.</para>
+
+	<para>The volatility of a value expression has no special rules, except that the
+	volatility of the invoked member has to be taken into account iff it is immediately
+	invoked. Otherwise, volatility information is lost.</para>
         
         <para>A callable reference expression is assignable to 
         <literal>Callable&lt;T,P...&gt;</literal> where <literal>T</literal> and 
@@ -993,6 +1022,12 @@ value comp = order(1,-1);</programlisting>
         <emphasis>invokable</emphasis>. An <emphasis>invocation</emphasis> consists of an 
         <emphasis>invoked expression</emphasis> of type <literal>Callable&lt;T,P...&gt;</literal>, 
         together with an argument list and, optionally, an explicit type argument list.</para>
+
+	<para>The volatility of a method invocation expression or class instantiation
+	expressions is considered to exhibit varying
+	volatility. In particular, they are considered to have side effects.
+	(TODO unless methods can have volatility checks and annotations)
+	All other invocation expressions do not have special rules.</para>
         
         <programlisting>Invocation: Primary Arguments | SequenceInstantiation</programlisting>
             
@@ -1761,7 +1796,13 @@ String name = getName();</programlisting>
         
         <para>When a local evaluation is executed, the current value of the local is 
         immediately obtained. The resulting value is the current value of the local.</para>
-                
+	
+	<para>The volatility of the local evalualtion expression is the least deterministic
+	of all expressions assigned to the local variable, or local volatility if the local is
+	an argument that is not assigned to. (TODO do we have an own volatility class here?)
+	The volatility of an attribute evalualtion expression includes the
+	declared volatility of the attribute.</para>
+        
         <para>When an attribute evaluation is executed:</para>
         
         <itemizedlist>
@@ -1873,7 +1914,9 @@ Map&lt;String, Person&gt; map = createMapFromEntries;</programlisting>
         <para>A class instantiation evaluates to a new instance of the class. The argument 
         values are passed to the initializer parameters of the class, and the initializer
         is executed.</para>
-             
+
+	<para>Method invocation and class instantiation are assumed to have side effects.
+	TODO see invocation expression.</para>
     </section>
     
     <section id="assignment">
@@ -1883,6 +1926,10 @@ Map&lt;String, Person&gt; map = createMapFromEntries;</programlisting>
         attribute reference for a <literal>variable</literal> attribute or local.</para>
         
         <programlisting>person.name := "Gavin";</programlisting>
+
+	<para>An assignment to instance variables is considered a side-effect. Assignment to
+	local variables is handled as described under TODO above and is <emphasis>not</emphasis> considered
+	a side-effect.</para>
         
         <!--
         <para>Sometimes we need to pass a <literal>variable</literal> attribute by 
@@ -1963,7 +2010,7 @@ setPerson(person);</programlisting>
         
         <programlisting>Meta: TypeMeta | MethodMeta | AttributeMeta | FunctionMeta | ValueMeta</programlisting>
         
-        <para>Metamodel references are compile-time typesafe.</para>
+        <para>Metamodel references are compile-time typesafe. They are regarded constant.</para>
         
         <programlisting>Type&lt;List&lt;String&gt;&gt; stringListType = List&lt;String&gt;;</programlisting>
         

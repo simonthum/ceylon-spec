@@ -1452,11 +1452,10 @@ else {
         
         <itemizedlist>
             <listitem>
-                <para>an unqualified value reference to a non-<literal>variable</literal>,
-                non-<literal>default</literal> simple attribute, local, or parameter, or</para>
+                <para>an expression having at most local volatility, or</para>
             </listitem>
             <listitem>
-                <para>an inline variable declaration together with an expression.</para>
+                <para>an inline variable declaration together with any expression.</para>
             </listitem>
         </itemizedlist>
         
