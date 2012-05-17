@@ -748,7 +748,7 @@ interface DefiniteReturn {
         doNothing();
     }
     
-    X getterWithReturnInFor3 {
+    varying X getterWithReturnInFor3 {
         for (X x in {X()}) {
             doSomething();
             return X();
@@ -1148,7 +1148,7 @@ interface DefiniteReturn {
         return X();
     }
     
-    X getterWithNestedClassWithThrow {
+    varying X getterWithNestedClassWithThrow {
         class Nested() {
             if (testSomething()) {
                 throw;

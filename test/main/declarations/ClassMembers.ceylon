@@ -63,7 +63,7 @@ abstract class Classes() {
         use(this);
     }
     
-    String str {
+    varying String str {
         return super.string;
     }
     

@@ -88,6 +88,10 @@ public abstract class TypedDeclaration extends Declaration {
         return false;
     }
     
+    public Volatility getVolatility() {
+    	return Volatility.UNKNOWN;
+    }
+    
     @Override
     public Map<String, DeclarationWithProximity> getMatchingDeclarations(Unit unit, String startingWith, int proximity) {
     	Map<String, DeclarationWithProximity> result = super.getMatchingDeclarations(unit, startingWith, proximity);

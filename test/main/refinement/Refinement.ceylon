@@ -69,7 +69,7 @@ class Refinement() {
         
         class X() {
             shared default Object something = "Hello";
-            shared default Integer count = 0;
+            shared default varying Integer count = 0;
             shared default void print(Object o) {}
             shared default Object getSomething() { return something; }
             shared default class Z() {}
@@ -163,7 +163,7 @@ class RefinedAsVariableSetterBase() {
 }
 
 class RefinedAsVariableSetterSub() extends RefinedAsVariableSetterBase() {
-    shared actual String attr {return "";}
+    shared actual immutable String attr {return "";}
     assign attr {}
     shared actual String vattr {return "";}
     assign vattr {}
@@ -189,7 +189,7 @@ class ConcreteRefinement() extends AbstractRefined() {
 
 class VariableSuper() {
     shared default variable Object i:=0;
-    shared default Object j=0;
+    shared default varying Object j=0;
     shared default variable Object k:=0;
 }
 

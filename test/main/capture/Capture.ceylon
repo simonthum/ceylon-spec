@@ -61,12 +61,12 @@ class Capture() {
         }
     }
     
-    X getterWithVariable {
+    varying X getterWithVariable {
         @captured variable X x := X();
         void innerMethod() {
             use(x);
         }
-        X innerGetter {
+        varying X innerGetter {
             return x;
         }
         assign innerGetter {

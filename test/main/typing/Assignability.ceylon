@@ -85,8 +85,8 @@ class Assignability() {
     Y atty { @error return var; }
     assign atty { @error var := atty; }
     
-    X methx { return var; }
-    Y methy { @error return var; }
+    varying X methx { return var; }
+    varying Y methy { @error return var; }
     
     void methv() { @error return var; }
     
@@ -96,7 +96,7 @@ class Assignability() {
         }
     }
     
-    X methx2 {
+    varying X methx2 {
         if ("Hello">"Goodbye") {
             return var;
         }
@@ -105,7 +105,7 @@ class Assignability() {
         }
     }
     
-    Y methy2 {
+    varying Y methy2 {
         if ("Hello"<"Goodbye") {
             @error return var;
         }

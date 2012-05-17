@@ -19,6 +19,7 @@ import com.redhat.ceylon.compiler.typechecker.analyzer.TypeArgumentVisitor;
 import com.redhat.ceylon.compiler.typechecker.analyzer.TypeHierarchyVisitor;
 import com.redhat.ceylon.compiler.typechecker.analyzer.TypeVisitor;
 import com.redhat.ceylon.compiler.typechecker.analyzer.ValueVisitor;
+import com.redhat.ceylon.compiler.typechecker.analyzer.VolatilityVisitor;
 import com.redhat.ceylon.compiler.typechecker.io.VirtualFile;
 import com.redhat.ceylon.compiler.typechecker.io.impl.Helper;
 import com.redhat.ceylon.compiler.typechecker.model.Declaration;
@@ -59,6 +60,7 @@ public class PhasedUnit {
     private boolean refinementValidated = false;
     private boolean flowAnalyzed = false;
     private boolean fullyTyped = false;
+	private boolean volatilityAnalysed = false;
 
     public VirtualFile getSrcDir() {
         return srcDir;
@@ -245,7 +247,30 @@ public class PhasedUnit {
         }
     }
 
-    public void generateStatistics(StatisticsVisitor statsVisitor) {
+    public synchronized void analyseVolatility() {
+		if (!volatilityAnalysed) {
+			assert fullyTyped;
+			
+			// 1. analyse anticipated volatility and refinement
+			VolatilityVisitor.VolatilityRefinementVisitor refinementVisitor = new VolatilityVisitor.VolatilityRefinementVisitor();
+			compilationUnit.visit(refinementVisitor);
+			//if (refinementVisitor.hasErrors())
+			//	return;
+			
+			// 2. check getter compliance
+			VolatilityVisitor.VolatilityGetterCheckVisitor getterCheckVisitor = new VolatilityVisitor.VolatilityGetterCheckVisitor();
+			compilationUnit.visit(getterCheckVisitor);
+			//if (getterCheckVisitor.hasErrors())
+			//	return;
+			
+			//    later, handle locals (iteratively?)
+			// 3. check annotation args
+			//    check if's
+			volatilityAnalysed = true;
+		}
+	}
+
+	public void generateStatistics(StatisticsVisitor statsVisitor) {
         compilationUnit.visit(statsVisitor);
     }
     

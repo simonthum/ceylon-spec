@@ -8,7 +8,7 @@ interface Declarations {
     
     Y createSomething() { return Y(); }
     
-    Y something { return createSomething(); }
+    varying Y something { return createSomething(); }
     
     class WithValueArg(@error Object value) {}
     void withValueArg(@error Object value) {}
@@ -110,8 +110,8 @@ interface Declarations {
     @error shared assign getterForSharedSetter {
     }
     
-    class Ni–o() {
-        Ni–o ni–o = Ni–o();
+    class Niï¿½o() {
+        Niï¿½o niï¿½o = Niï¿½o();
     }
     
     void _bar() { _bar(); }

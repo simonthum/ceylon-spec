@@ -99,5 +99,11 @@ public class Method extends MethodOrValue implements Generic, Scope, Functional 
         }
         return null;
     }
+
+	@Override
+	public Volatility getVolatility() {
+		// per the spec
+		return Volatility.VARYING;
+	}
     
 }

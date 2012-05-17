@@ -7,7 +7,7 @@ String center(String content, Integer size) {
 }
 
 class Cell(String... content) {
-    shared actual String string {
+    shared actual varying String string {
         value result = StringBuilder();
         for (s in content) {
             result.append(s);
@@ -18,7 +18,7 @@ class Cell(String... content) {
 
 class Row(Cell... cell) {
     shared Cell[] cells = cell.sequence;
-    shared actual String string {
+    shared actual varying String string {
         value result = StringBuilder();
         result.append("|");
         for (cell in cells) {
@@ -30,7 +30,7 @@ class Row(Cell... cell) {
 }
 
 class Table(String title, Row header, Row... rows) {
-    shared actual String string {
+    shared actual varying String string {
         value result = StringBuilder();
         value size = header.cells.size*21+1;
         result.append(center(title, size) + "\n");

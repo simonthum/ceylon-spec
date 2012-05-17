@@ -33,6 +33,7 @@ import com.redhat.ceylon.compiler.typechecker.model.TypedDeclaration;
 import com.redhat.ceylon.compiler.typechecker.model.Unit;
 import com.redhat.ceylon.compiler.typechecker.model.Value;
 import com.redhat.ceylon.compiler.typechecker.model.ValueParameter;
+import com.redhat.ceylon.compiler.typechecker.model.Volatility;
 import com.redhat.ceylon.compiler.typechecker.tree.Node;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.Expression;
@@ -409,6 +410,7 @@ public class DeclarationVisitor extends Visitor {
         that.setAnonymousClass(c);
         visitDeclaration(that, c);
         Value v = new Value();
+        v.setVolatility(Volatility.CONSTANT);
         that.setDeclarationModel(v);
         visitDeclaration(that, v);
         that.getType().setTypeModel(c.getType());
@@ -428,6 +430,7 @@ public class DeclarationVisitor extends Visitor {
         that.setAnonymousClass(c);
         visitArgument(that, c);
         Value v = new Value();
+        v.setVolatility(Volatility.CONSTANT);  //TODO check twice
         that.setDeclarationModel(v);
         visitArgument(that, v);
         that.getType().setTypeModel(c.getType());

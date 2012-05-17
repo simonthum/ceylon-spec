@@ -42,9 +42,9 @@ class Primaries() {
     
     @type["Primaries.C"] value p14 = (aa.b).c();
     
-    @type["Primaries.C"] value cc { return bb.c(); }
+    @type["Primaries.C"] varying value cc { return bb.c(); }
     
-    @type["Primaries.C"] value ccc { return aa.b.c(); }
+    @type["Primaries.C"] varying value ccc { return aa.b.c(); }
     
     @type["Primaries.A"] value p15 = this.A();
     

@@ -9,7 +9,7 @@ interface SelfReference {
             use(this);
             return this;
         }
-        value v {
+        varying value v {
             use(this);
             return this;
         }
@@ -19,7 +19,7 @@ interface SelfReference {
                 use(outer);
                 return outer;
             }
-            value v {
+            varying value v {
                 use(outer);
                 return outer;
             }
@@ -31,7 +31,7 @@ interface SelfReference {
             use(this);
             return this;
         }
-        value v {
+        varying value v {
             use(this);
             return this;
         }
@@ -41,7 +41,7 @@ interface SelfReference {
                 use(outer);
                 return outer;
             }
-            value v {
+            varying value v {
                 use(outer);
                 return outer;
             }

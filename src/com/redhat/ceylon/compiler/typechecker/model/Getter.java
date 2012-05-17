@@ -9,6 +9,7 @@ package com.redhat.ceylon.compiler.typechecker.model;
 public class Getter extends MethodOrValue implements Scope {
 
 	private Setter setter;
+	private Volatility volatility = Volatility.UNKNOWN;
 
     public Setter getSetter() {
         return setter;
@@ -23,4 +24,12 @@ public class Getter extends MethodOrValue implements Scope {
         return setter!=null;
     }
     
+    @Override
+	public Volatility getVolatility() {
+		return volatility;
+	}
+
+	public void setVolatility(Volatility volatility) {
+		this.volatility = volatility;
+	}
 }

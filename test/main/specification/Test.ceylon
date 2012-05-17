@@ -3,7 +3,7 @@ class Test() {
     @error Inner();
     @error method();
     @error print(attribute);
-    String attribute { 
+    varying String attribute { 
         Inner();
         method();
         print(attribute);

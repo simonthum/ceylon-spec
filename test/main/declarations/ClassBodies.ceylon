@@ -589,7 +589,7 @@ interface ClassBodies {
         String method() {
             @error return name;
         }
-        shared String attribute {
+        shared varying String attribute {
             return method();
         }
     }
