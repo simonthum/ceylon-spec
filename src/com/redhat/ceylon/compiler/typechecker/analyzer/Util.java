@@ -11,8 +11,10 @@ import com.redhat.ceylon.compiler.typechecker.model.ProducedType;
 import com.redhat.ceylon.compiler.typechecker.model.Scope;
 import com.redhat.ceylon.compiler.typechecker.model.TypeDeclaration;
 import com.redhat.ceylon.compiler.typechecker.model.TypedDeclaration;
+import com.redhat.ceylon.compiler.typechecker.tree.Message;
 import com.redhat.ceylon.compiler.typechecker.tree.Node;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree;
+import com.redhat.ceylon.compiler.typechecker.tree.UnexpectedError;
 import com.redhat.ceylon.compiler.typechecker.tree.Visitor;
 
 /**
@@ -232,12 +234,25 @@ class Util {
         }
     }
     
-    private static boolean hasError(Node node) {
+    private static boolean containsErrors(List<Message> errors, boolean allowWarnings) {
+		if (allowWarnings) {
+			for (Message m : errors) {
+				if (m instanceof AnalysisError || m instanceof UnexpectedError) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			return !errors.isEmpty();
+		}
+	}
+    
+    public static boolean hasError(Node node, final boolean allowWarning) {
         class ErrorVisitor extends Visitor {
             boolean found = false;
             @Override
             public void visitAny(Node that) {
-                if (that.getErrors().isEmpty()) {
+                if (!containsErrors(that.getErrors(), allowWarning)) {
                     super.visitAny(that);
                 }
                 else {
@@ -248,6 +263,10 @@ class Util {
         ErrorVisitor ev = new ErrorVisitor();
         node.visit(ev);
         return ev.found;
+    }
+    
+    public static boolean hasError(Node node) {
+    	return hasError(node, false);
     }
 
     private static void addTypeUnknownError(Node node, String message) {
