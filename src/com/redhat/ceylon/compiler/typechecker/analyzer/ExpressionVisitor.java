@@ -257,7 +257,6 @@ public class ExpressionVisitor extends Visitor {
             }
             else {
                 se.visit(this);
-                checkReferenceIsNonVariable(v, se);
                 /*checkAssignable( se.getExpression().getTypeModel(), 
                         getOptionalType(getObjectDeclaration().getType()), 
                         se.getExpression(), 
@@ -382,7 +381,6 @@ public class ExpressionVisitor extends Visitor {
                 }
                 t = se.getExpression().getTypeModel();
                 n = v;
-                checkReferenceIsNonVariable(v, se);
                 initOriginalDeclaration(v);
                 term = se.getExpression().getTerm();
             }
@@ -415,28 +413,6 @@ public class ExpressionVisitor extends Visitor {
         v.getType().visit(this);
         if (v.getDeclarationModel().getType()==null) {
             v.getDeclarationModel().setType( defaultType() );
-        }
-    }
-
-    private void checkReferenceIsNonVariable(Tree.Variable v,
-            Tree.SpecifierExpression se) {
-        if (v.getType() instanceof Tree.SyntheticVariable) {
-            checkReferenceIsNonVariable((Tree.BaseMemberExpression) se.getExpression().getTerm());
-        }
-    }
-
-    private void checkReferenceIsNonVariable(Tree.BaseMemberExpression ref) {
-        Declaration d = ref.getDeclaration();
-        if (d!=null) {
-            if (d instanceof Getter) {
-                ref.addError("referenced value is a getter: " + d.getName());
-            }
-            if ( ( (TypedDeclaration) d ).isVariable() ) {
-                ref.addError("referenced value is variable: " + d.getName());
-            }
-            if ( d.isDefault() ) {
-                ref.addError("referenced value is default and may be refined: " + d.getName());
-            }
         }
     }
     
@@ -3338,10 +3314,7 @@ public class ExpressionVisitor extends Visitor {
             }
             if (hasIsCase) {
                 Tree.Term st = switchExpression.getTerm();
-                if (st instanceof Tree.BaseMemberExpression) {
-                    checkReferenceIsNonVariable((Tree.BaseMemberExpression) st);
-                }
-                else {
+                if (!(st instanceof Tree.BaseMemberExpression)) {
                     switchExpression.addError("switch expression must be a value reference in switch with type cases");
                 }
             }   

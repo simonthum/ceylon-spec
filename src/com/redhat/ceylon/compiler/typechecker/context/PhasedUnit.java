@@ -266,6 +266,7 @@ public class PhasedUnit {
 			//    later, handle locals (iteratively?)
 			// 3. check annotation args
 			//    check if's
+			compilationUnit.visit(new VolatilityVisitor.FinalVolatilityVisitor());
 			volatilityAnalysed = true;
 		}
 	}

@@ -8,16 +8,20 @@ import com.redhat.ceylon.compiler.typechecker.model.Value;
 import com.redhat.ceylon.compiler.typechecker.model.ValueParameter;
 import com.redhat.ceylon.compiler.typechecker.model.Volatility;
 import com.redhat.ceylon.compiler.typechecker.tree.Node;
+import com.redhat.ceylon.compiler.typechecker.tree.Tree.AnnotationList;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.AnyAttribute;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.AttributeGetterDefinition;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.BaseMemberExpression;
+import com.redhat.ceylon.compiler.typechecker.tree.Tree.ExistsOrNonemptyCondition;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.Expression;
+import com.redhat.ceylon.compiler.typechecker.tree.Tree.IsCondition;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.Literal;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.MemberOrTypeExpression;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.Outer;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.QualifiedMemberExpression;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.SelfExpression;
 import com.redhat.ceylon.compiler.typechecker.tree.Tree.Statement;
+import com.redhat.ceylon.compiler.typechecker.tree.Tree.SwitchClause;
 import com.redhat.ceylon.compiler.typechecker.tree.Visitor;
 
 /**
@@ -244,6 +248,80 @@ public class VolatilityVisitor extends Visitor {
 					}
 					e.node.addError(e.getMessage());
 				}
+			}
+		}
+	}
+	
+	/**
+	 * Final volatility checks.
+	 * 
+	 * Checks if if/switch conditions are stable, i.e. shadowed or refer to immutable expressions,
+	 * and constness of annotations.
+	 * @author Simon Thum
+	 */
+	public static class FinalVolatilityVisitor extends Visitor {
+		
+		private boolean checkExpression(final Expression e, final Volatility v) {
+			try {
+				e.visitChildren(new Visitor() {
+					@Override
+					public void visit(Expression that) {
+						that.visit(new VolatilityExpressionVisitor(v));
+					}
+					
+					@Override
+					public void handleException(Exception e, Node that) {
+						ExitException.handle(e);
+					}
+				});
+			} catch (ExitException ex) {
+				if (ex.node != null) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		@Override
+		public void visit(ExistsOrNonemptyCondition that) {
+			super.visit(that);
+			if (!containsErrors(that) 
+					&& that.getVariable() == null 
+					&& !checkExpression(that.getExpression(), Volatility.LOCAL))
+				that.addError("Expression must be shadowed or less volatile (at most local)");
+		}
+
+		@Override
+		public void visit(IsCondition that) {
+			super.visit(that);
+			if (!containsErrors(that) 
+					&& that.getVariable() == null 
+					&& !checkExpression(that.getExpression(), Volatility.LOCAL))
+				that.addError("Expression must be shadowed or less volatile (at most local)");
+		}
+
+		@Override
+		public void visit(SwitchClause that) {
+			super.visit(that);
+			if (!containsErrors(that)
+					&& !checkExpression(that.getExpression(), Volatility.LOCAL))
+				that.addError("Expression must be shadowed or less volatile (at most local)");
+		}
+		
+		@Override
+		public void visit(AnnotationList that) {
+			super.visit(that);
+			if (!containsErrors(that)) {
+				that.visit(new Visitor() {
+
+					@Override
+					public void visit(Expression that) {
+						if (!checkExpression(that, Volatility.CONSTANT)) {
+							that.addError("annotations must be compile-time constants");
+						}
+					}
+					
+				});
 			}
 		}
 	}
